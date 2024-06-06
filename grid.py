@@ -70,6 +70,7 @@ class Grid:
                             y_grid = ceil(a * (x + x0) + b)
                             self.grid[int(x + x0 + 100), y_grid + 100] = 2
                             plt.plot(x+x0, y_grid)
+#a
 
     def print_grid(self):
         plt.axis([-100, 100, -100, 100])
