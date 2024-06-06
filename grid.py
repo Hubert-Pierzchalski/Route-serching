@@ -18,66 +18,65 @@ class Grid:
         self.weighted_graph = np.zeros((number, number))
         self.G = nx.Graph()
 
-    def set_grid(self):
+    def add_cities(self):
         number = self.number_of_cities
-        for i in range(number): # "i" is a city
+        for i in range(number):  # "i" is a city
             x = np.random.randint(-100, 101)
             y = np.random.randint(-100, 101)
             self.cities[0, i] = x
             self.cities[1, i] = y
             self.grid[x + 100, y + 100] = 1  # marking locations of cities
             self.G.add_node(i, pos=[x, y])
+
+    def add_weighted_graph(self):
+        print(self.weighted_graph)
+        number = self.number_of_cities
         for i in range(number):
-            for j in range(number-i-1):
-                j += i + 1
-                weight = sqrt((self.cities[0, i] - self.cities[0, j]) ** 2 + (self.cities[1, i] - self.cities[1, j]) ** 2)
-                self.weighted_graph[i, j] = weight
+            for j in range(number-i):
+                j = i + j
                 if i != j:
+                    weight = sqrt((self.cities[0, i] - self.cities[0, j]) ** 2 + (self.cities[1, i] - self.cities[1, j]) ** 2)
+                    self.weighted_graph[i, j] = weight
+                    self.weighted_graph[j, i] = weight
                     self.G.add_edge(i, j, weight=weight)
+                else:
+                    self.weighted_graph[i, j] = np.inf
 
         pos = nx.get_node_attributes(self.G, "pos")
 
         nx.draw_networkx_nodes(self.G, pos=pos)
         nx.draw_networkx_edges(self.G, pos=pos)
 
-        #labels
+        # labels
         nx.draw_networkx_labels(self.G, pos, font_size=20, font_family="sans-serif")
         # edge weight labels
         edge_labels = nx.get_edge_attributes(self.G, "weight")
-        # nx.draw_networkx_edge_labels(self.G, pos, edge_labels)
+        nx.draw_networkx_edge_labels(self.G, pos, edge_labels)
+        print(self.weighted_graph)
 
-
-    def roads(self):
-        num = self.number_of_cities
-        for i in range(num):
-            x0 = self.cities[0, i]
-            y0 = self.cities[1, i]
-            for j in range(i+1, num):
-                x1 = self.cities[0, j]
-                y1 = self.cities[1, j]
-                xdiff = int(abs(x0-x1))
-                if x0 == x1:
-                    pass
-                else:
-                    a, b = calc_linear_function(x0, y0, x1, y1)
-                    if x1 < x0:
-                        for x in range(xdiff):
-                            y_grid = ceil(a * ((-1 * x) + x0) + b)
-                            self.grid[int(-1 * x + x0 + 100), y_grid + 100] = 2
-                            plt.plot(-1*x+x0, y_grid)
-                    elif x1 > x0:
-                        for x in range(xdiff):
-                            y_grid = ceil(a * (x + x0) + b)
-                            self.grid[int(x + x0 + 100), y_grid + 100] = 2
-                            plt.plot(x+x0, y_grid)
-#a
+    def reduce_roads(self):
+        print(self.weighted_graph)
+        number = self.number_of_cities
+        new_roads = 0
+        for i in range(self.number_of_cities):
+            new_roads += i
+        delete_cities = new_roads - ceil(new_roads * 0.8)
+        while delete_cities > 0:
+            city_a = np.random.randint(0, number)
+            city_b = np.random.randint(0, number)
+            if self.weighted_graph[city_a, city_b] != np.inf:
+                self.weighted_graph[city_a, city_b] = np.inf
+                self.weighted_graph[city_b, city_a] = np.inf
+                delete_cities -= 1
+        print(self.weighted_graph)
 
     def print_grid(self):
         plt.axis([-100, 100, -100, 100])
         plt.show()
 
 
-grid = Grid(7)
-grid.set_grid()
-# grid.roads()
+grid = Grid(4)
+grid.add_cities()
+grid.add_weighted_graph()
+grid.reduce_roads()
 grid.print_grid()
