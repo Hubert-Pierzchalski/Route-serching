@@ -14,7 +14,6 @@ class Grid:
     def __init__(self, number):
         self.number_of_cities = number
         self.cities = np.zeros((2, self.number_of_cities))  # coordinates of cities
-        self.grid = np.zeros((201, 201))  # map
         self.weighted_graph = np.zeros((number, number))
         self.G = nx.Graph()
 
@@ -25,7 +24,6 @@ class Grid:
             y = np.random.randint(-100, 101)
             self.cities[0, i] = x
             self.cities[1, i] = y
-            self.grid[x + 100, y + 100] = 1  # marking locations of cities
             self.G.add_node(i, pos=[x, y])
 
     def add_weighted_graph(self):
@@ -57,7 +55,7 @@ class Grid:
         new_roads = 0
         for i in range(self.number_of_cities):
             new_roads += i
-        delete_cities = new_roads - ceil(new_roads * 0.8)
+        delete_cities = new_roads - ceil(new_roads * 0.5)
         while delete_cities > 0:
             city_a = np.random.randint(0, number)
             city_b = np.random.randint(0, number)
@@ -66,11 +64,9 @@ class Grid:
                 self.weighted_graph[city_b, city_a] = np.inf
                 delete_cities -= 1
 
-    def BFS(self, starting_city):
+    def BFS(self, starting_city): # For TPS
         roads = self.weighted_graph.copy()
         visited_cities = []
-        # roads[0, :] = np.inf
-        # roads[:, 0] = np.inf
         queue = deque()
         visited_cities.append(starting_city)
         queue.append(starting_city)
@@ -79,12 +75,111 @@ class Grid:
             # current_city = queue[first_object]
             current_city = queue.popleft()
             for city, length in enumerate(roads[current_city]):
-                if length != np.inf:
+                if length != np.inf and city not in visited_cities:
                     queue.append(city)
                     visited_cities.append(city)
-                    roads[city, :] = np.inf
-                    roads[:, city] = np.inf
-        print(visited_cities)
+        return visited_cities
+
+    def DFS(self, starting_city):
+        roads = self.weighted_graph.copy()
+        visited_cities = []
+        stack = []
+        stack.append(starting_city)
+        while stack:
+            current_city = stack.pop()
+            visited_cities.append(current_city)
+            for city, length in enumerate(roads[current_city]):
+                if length != np.inf and city not in visited_cities:
+                    stack.append(city)
+        return visited_cities[0:self.number_of_cities]
+
+    def minimum_spanning_tree(self):
+        road = []
+        roads = self.weighted_graph.copy()
+        for i in range(self.number_of_cities-1):
+            index = np.argmin(roads)
+            cols = index % self.number_of_cities
+            rows = index // self.number_of_cities
+            road.append([rows, cols])
+            roads[rows, cols] = np.inf
+            roads[cols, rows] = np.inf
+            for i in range(self.number_of_cities):
+                if roads[rows, i] == np.inf:
+                    roads[cols, i] = np.inf
+                    roads[i, cols] = np.inf
+            for i in range(self.number_of_cities):
+                if roads[cols, i] == np.inf:
+                    roads[rows, i] = np.inf
+                    roads[i, rows] = np.inf
+        print(road)
+
+    def greedy_search(self, starting_city):
+        roads = self.weighted_graph.copy()
+        route = [starting_city]
+        current_city = starting_city
+        for i in range(self.number_of_cities-1):
+            next_city = np.argmin(roads[current_city, :])
+            route.append(next_city)
+            roads[current_city, :] = np.inf
+            roads[:, current_city] = np.inf
+            current_city = next_city
+        print(route)
+        return route
+
+    def route_distance(self, order_of_cities):
+        distance = 0
+        for i in range(len(order_of_cities)-1):
+            # print(self.weighted_graph[order_of_cities[i], order_of_cities[i+1]])
+            distance += self.weighted_graph[order_of_cities[i], order_of_cities[i+1]]
+        return distance
+
+    def bidirectional_search(self, starting_city, end_city):
+        roads_from_start = np.full((self.number_of_cities, self.number_of_cities), np.inf)
+
+        # roads_from_end = np.full((self.number_of_cities, self.number_of_cities), np.inf)
+        last_nodes_start = []
+        # last_nodes_end = []
+        # for i in range(self.number_of_cities):
+        #     if self.weighted_graph[current_city_start, i] != np.inf:
+
+        # current_city_end = end_city
+        # for i in range(self.number_of_cities):
+        #     roads_from_start[current_city_start, i] = self.number_of_cities[current_city_start, i]
+        #     roads_from_start[i, current_city_start] = self.number_of_cities[current_city_start, i]
+        #     roads_from_end[current_city_end, i] = self.number_of_cities[current_city_end, i]
+        #     roads_from_end[i, current_city_end] = self.number_of_cities[current_city_end, i]
+        # while(last_nodes_end not in last_nodes_start):
+        #     for city, length in enumerate(roads_from_start[current_city_start, :]):
+        #         if
+        #         distance = self.weighted_graph[current_city_start, city]
+        #
+        #
+        #     for city, length in enumerate(roads_from_start[current_city_end, :]):
+        #         if length != np.inf:
+        current_city_start = starting_city
+        last_seen_start = deque()
+        visited_cities = []
+        nodes_from_start = [np.inf] * self.number_of_cities
+        for city in range(self.number_of_cities):
+            if self.weighted_graph[current_city_start, city] != np.inf and city not in visited_cities:
+                nodes_from_start[city] = self.weighted_graph[current_city_start, city]
+                last_seen_start.append(city)
+        visited_cities.append(current_city_start)
+
+        # print(nodes_from_start, "\n", last_seen_start)
+
+        # while(end_city not in last_nodes_start): #while(last_seen_start not in last_seen_end):
+        for j in range(self.number_of_cities):
+            current_city_start = last_seen_start.popleft()
+            for city in range(self.number_of_cities):
+                if self.weighted_graph[current_city_start, city] != np.inf and city not in visited_cities:
+                    dist = self.weighted_graph[current_city_start, city] + nodes_from_start[current_city_start]
+                    if dist < nodes_from_start[city]:
+                        nodes_from_start[city] = dist
+                last_seen_start.append(city)
+            visited_cities.append(current_city_start)
+
+        print(nodes_from_start[end_city], "\n")
 
     def print_grid(self):
         print(self.weighted_graph)
@@ -92,9 +187,21 @@ class Grid:
         plt.show()
 
 
-grid = Grid(4)
+grid = Grid(5)
 grid.add_cities()
-# grid.reduce_roads()
+grid.reduce_roads()
 grid.add_weighted_graph()
-grid.BFS(0)
-
+# order_of_cities = grid.BFS(0)
+# print(order_of_cities)
+# distance = grid.route_distance(order_of_cities)
+# print(distance)
+# order_of_cities = grid.DFS(0)
+# print(order_of_cities)
+# distance = grid.route_distance(order_of_cities)
+# print(distance)
+# grid.minimum_spanning_tree()
+# order_of_cities = grid.greedy_search(0)
+# distance = grid.route_distance(order_of_cities)
+# print(distance)
+# grid.print_grid()
+grid.bidirectional_search(0, 4)
