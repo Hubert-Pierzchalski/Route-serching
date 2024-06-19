@@ -5,6 +5,15 @@ import networkx as nx # used only for visualization
 from collections import deque
 
 
+def is_connected(visited_cities, city_1, city_2):
+    new_seen_cities = np.union1d(visited_cities[city_1], visited_cities[city_2])
+    for city in visited_cities[city_1]:
+        visited_cities[city] = new_seen_cities
+    for city in visited_cities[city_2]:
+        visited_cities[city] = new_seen_cities
+    return visited_cities
+
+
 class Grid:
     def __init__(self, number):
         self.number_of_cities = number
@@ -43,8 +52,8 @@ class Grid:
         # labels
         nx.draw_networkx_labels(self.G, pos, font_size=20, font_family="sans-serif")
         # edge weight labels
-        edge_labels = nx.get_edge_attributes(self.G, "weight")
-        nx.draw_networkx_edge_labels(self.G, pos, edge_labels)
+        # edge_labels = nx.get_edge_attributes(self.G, "weight")
+        # nx.draw_networkx_edge_labels(self.G, pos, edge_labels)
 
     def reduce_roads(self):
         number = self.number_of_cities
@@ -135,7 +144,7 @@ class Grid:
         result = lengths.index(min(lengths))
         return self.DFS_arr[result], lengths[result]
 
-    def minimum_spanning_tree(self):
+    def minimum_spanning_tree(self, starting_city):
         road = []
         roads = self.weighted_graph.copy()
         for i in range(self.number_of_cities-1):
@@ -153,7 +162,29 @@ class Grid:
                 if roads[cols, i] == np.inf:
                     roads[rows, i] = np.inf
                     roads[i, rows] = np.inf
-        print(road)
+        for street in road:
+            print(street)
+            roads[street[0], street[1]] = self.weighted_graph[street[0], street[1]]
+            roads[street[1], street[0]] = self.weighted_graph[street[1], street[0]]
+        print(roads)
+
+    def mst(self):
+        road = []
+        roads = self.weighted_graph.copy()
+        visited_cities = [[y] for y in range(self.number_of_cities)]
+        while(len(road) != self.number_of_cities - 1):
+            index = np.argmin(roads)
+            city_1 = index % self.number_of_cities  #columns
+            city_2 = index // self.number_of_cities  #rows
+            if city_1 not in visited_cities[city_2]:
+                roads[city_1, city_2] = np.inf
+                roads[city_2, city_1] = np.inf
+                road.append([city_1, city_2])
+                np.append(visited_cities[city_1], (city_2))
+                np.append(visited_cities[city_2], (city_1))
+                # visited_cities[city_2].append(city_1)
+                visited_cities = is_connected(visited_cities, city_1, city_2)
+        return road
 
     def greedy_search(self, starting_city):
         roads = self.weighted_graph.copy()
@@ -165,8 +196,14 @@ class Grid:
             roads[current_city, :] = np.inf
             roads[:, current_city] = np.inf
             current_city = next_city
-        print(route)
-        return route
+        i = 0
+        for j, city in enumerate(route):
+            if self.weighted_graph[route[-1], starting_city] != np.inf:
+                route.append(starting_city)
+                return route
+            else:
+                route.append(route[-2-i-j])
+                i += 1
 
     def route_distance(self, order_of_cities):
         distance = 0
@@ -254,16 +291,18 @@ grid = Grid(4)
 grid.add_cities()
 grid.reduce_roads()
 grid.add_weighted_graph()
-order_of_cities, distance = grid.bfs(0)
-print(order_of_cities)
+# order_of_cities, distance = grid.bfs(0)
+# print(order_of_cities)
 # distance = grid.route_distance(order_of_cities)
-print(distance)
-order_of_cities, distance = grid.DFS_start(0)
-print(order_of_cities)
+# print(distance)
+# order_of_cities, distance = grid.DFS_start(0)
+# print(order_of_cities)
 # distance = grid.route_distance(order_of_cities)
-print(distance)
-# grid.minimum_spanning_tree()
+# print(distance)
+mst = grid.mst()
+print(mst)
 # order_of_cities = grid.greedy_search(0)
+# print(order_of_cities)
 # distance = grid.route_distance(order_of_cities)
 # print(distance)
 # grid.print_grid()
