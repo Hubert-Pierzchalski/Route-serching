@@ -221,7 +221,7 @@ class Grid:
                 possible_routes.append(current_route.copy())
 
         if len(possible_routes[0]) == self.number_of_cities:
-            # print("Everything fine") # indication while testing
+            print("Everything fine") # indication while testing
             lengths = []
             final_routes = []
             for routes in possible_routes:
@@ -239,50 +239,42 @@ class Grid:
                 print("Not possible to find route")
                 return None
 
-        elif len(possible_routes[0]) == (self.number_of_cities-1):
-            # print("Not enough by 1 city") # indication while testing
-            dividend = np.arange(self.number_of_cities)
-            lengths = []
-            final_routes = []
-            for routes in possible_routes:
-                last_city = routes[-1]
-                city_left = np.setdiff1d(dividend, routes)
-                if self.weighted_graph[last_city, city_left[0]] != np.inf:
-                    routes.append(city_left[0])
-                    if self.weighted_graph[city_left[0], starting_city] != np.inf:
-                        routes.append(starting_city)
-                        lengths.append(self.route_distance(routes))
-                        final_routes.append(routes)
-            if len(final_routes) != 0:
-                result = lengths.index(min(lengths))
-                print(final_routes[result])
-                return final_routes[result]
-            else:
-                print("Not possible to find route")
-                return None
+        # elif len(possible_routes[0]) == (self.number_of_cities-1):
+        #     # print("Not enough by 1 city") # indication while testing
+        #     dividend = np.arange(self.number_of_cities)
+        #     lengths = []
+        #     final_routes = []
+        #     for routes in possible_routes:
+        #         last_city = routes[-1]
+        #         city_left = np.setdiff1d(dividend, routes)
+        #         if self.weighted_graph[last_city, city_left[0]] != np.inf:
+        #             routes.append(city_left[0])
+        #             if self.weighted_graph[city_left[0], starting_city] != np.inf:
+        #                 routes.append(starting_city)
+        #                 lengths.append(self.route_distance(routes))
+        #                 final_routes.append(routes)
+        #     if len(final_routes) != 0:
+        #         result = lengths.index(min(lengths))
+        #         print(final_routes[result])
+        #         return final_routes[result]
+        #     else:
+        #         print("Not possible to find route")
+        #         return None
 
         else:
-            print(f"Not possible to found correct route: {possible_routes}")
-            return possible_routes
-
-        # curr_longest = 0
-        # queue = deque()
-        # queue.append(starting_city)
-        # current_route = [queue.popleft()]
-        # visited_cities = [current_route]
-        # while queue:
-        #     visited_cities.clear()
-        #     current_route = queue.popleft()
-        #     visited_cities = current_route
-        #     current_city = current_route[-1]
-        #     for city, length in enumerate(self.weighted_graph[current_city]):
-        #         if length != np.inf and city not in visited_cities:
-        #             auxiliary_route = current_route.copy()
-        #             auxiliary_route.append(city)
-        #             queue.append(auxiliary_route)
-        #     if(len(current_route) == self.number_of_cities):
-        #         possible_routes.append(current_route.copy())
-        # print(possible_routes)
+            print("else")
+            # dividend = np.arange(self.number_of_cities)
+            lengths = []
+            for routes in possible_routes:
+                print(routes)
+                # last_city = routes[-1]
+                # visited_cities = np.intersect1d(dividend, routes)
+                self.DFS(routes)
+            print(self.DFS_arr)
+            for routes in self.DFS_arr:
+                lengths.append(self.route_distance(routes))
+            index = np.argmin(lengths)
+            return self.DFS_arr[index], min(lengths)
 
     def greedy_search(self, starting_city):
         roads = self.weighted_graph.copy()
@@ -416,8 +408,8 @@ order_of_cities, distance_bfs = grid.bfs(starting_city)
 print(f"BFS: {order_of_cities} \ndistance: {distance_bfs}")
 order_of_cities, distance_dfs = grid.DFS_start(starting_city)
 print(f"DFS: {order_of_cities} \ndistance: {distance_dfs}")
-mst = grid.approx_mst(starting_city)
-print(f"MST: {mst}")
+mst, distance_mst = grid.approx_mst(starting_city)
+print(f"MST: {mst}\ndistance: {distance_mst}")
 order_of_cities = grid.greedy_search(starting_city)
 print(f"Greedy: {order_of_cities}")
 if order_of_cities:
